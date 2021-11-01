@@ -105,17 +105,14 @@ int compute(int **life, int **temp, int new_mycount, int N) {
 
 
 int main(int argc, char **argv) {
-  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr ; //NTHREADS,
+  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr;
   int i, j, k, flag=1, myflag=1;
   int myN, rank, size, remain,  mycount, *counts=NULL, *displs=NULL, new_mycount; //new  
-  //int rank, size;
+  
   int *x=NULL, *y; //new
   double t1, t2;
   char filename[BUFSIZ];
   FILE *fptr;
-
-
-
 
   MPI_Init(&argc, &argv);//new
   MPI_Comm_size(MPI_COMM_WORLD, &size);//new
@@ -202,8 +199,6 @@ int main(int argc, char **argv) {
   /* Play the game of life for given number of iterations */
   for (k = 0; k < NTIMES; k++) {
 
-    //printf("k =  %d\n", k);
-	
 	y = &local_life[0][0]; 
     int up_nbr, down_nbr;
 
@@ -223,7 +218,6 @@ int main(int argc, char **argv) {
 	MPI_Waitall(4, reqs, MPI_STATUSES_IGNORE);
 
     myflag = 0;
-	//temp = allocarray((mycount/(N+2))+2,N+2);
 	new_mycount = (mycount/(N+2));			
 	myflag = compute(local_life, temp, new_mycount, N);
 
@@ -267,12 +261,9 @@ int main(int argc, char **argv) {
   freearray(life);
   free(counts);
   free(displs);
- // free(x);
    }
   freearray(local_life);
   freearray(temp);
-  //freearray(ptr);
- // free(y);
  
   MPI_Finalize();//new
   return 0;
