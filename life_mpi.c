@@ -105,61 +105,38 @@ int compute(int **life, int **temp, int new_mycount, int N) {
 
 
 int main(int argc, char **argv) {
-  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr, NTHREADS;
+  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr;
   int i, j, k, flag=1, myflag=1;
   int myN, rank, size, remain,  mycount, *counts=NULL, *displs=NULL, new_mycount; //new  
-  //int rank, size;
+
   int *x=NULL, *y; //new
   double t1, t2;
   char filename[BUFSIZ];
   FILE *fptr;
-
-
   
   MPI_Status status;
   MPI_Init(&argc, &argv);//new
   MPI_Comm_size(MPI_COMM_WORLD, &size);//new
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);//new
   
-  //  if (argc != 4) {
-  //  printf("Usage: %s <size> <max. iterations> <nthreads> <output dir>\n", argv[0]);
-  //  exit(-1);
- //}  
-
-//  N = atoi(argv[1]);//new
-
-
-//  NTIMES = atoi(argv[2]);
- // sprintf(filename,"%s/output.%d.%d.%d", argv[3], N, NTIMES, size);
-  
-  
-  
-    if (argc != 5) {
+    if (argc != 4) {
     printf("Usage: %s <size> <max. iterations> <nthreads> <output dir>\n", argv[0]);
     exit(-1);
-  }
+  }  
 
-  N = atoi(argv[1]);
-  NTIMES = atoi(argv[2]);
-  NTHREADS = atoi(argv[3]);
-  sprintf(filename,"%s/output.%d.%d.%d", argv[4], N, NTIMES, NTHREADS);
-
-    myN = (N) / size;
+  N = atoi(argv[1]);//new
+  myN = (N) / size;
   remain = (N) % size;
+
+  NTIMES = atoi(argv[2]);
+  sprintf(filename,"%s/output.%d.%d.%d", argv[3], N, NTIMES, size);
   
   	if (rank == 0) {
-  
   if ((fptr = fopen(filename, "w")) == NULL) {
-     printf("Error opening file %s for writing\n", argv[3]);
+     printf("Error opening file %s for writing\n", argv[2]);
      perror("fopen");
      exit(-1);
   }
-  
- // if ((fptr = fopen(filename, "w")) == NULL) {
-   //  printf("Error opening file %s for writing\n", argv[2]);
-    // perror("fopen");
-    // exit(-1);
- // }
 
 	  /* Allocate memory for both arrays */
 	  life = allocarray(N,N+2);	  
@@ -240,7 +217,6 @@ int main(int argc, char **argv) {
 		      MPI_COMM_WORLD, &status );			  
 
     myflag = 0;
-	//temp = allocarray((mycount/(N+2))+2,N+2);
 	new_mycount = (mycount/(N+2));			
 	myflag = compute(local_life, temp, new_mycount, N);
 
@@ -259,7 +235,6 @@ int main(int argc, char **argv) {
     /* Display the life matrix */
     printarray(life, N, k+1);
 #endif
-   //MPI_Barrier(MPI_COMM_WORLD);
 	  		flag = 0;
 	  }else
 		break;
@@ -284,13 +259,9 @@ int main(int argc, char **argv) {
   freearray(life);
   free(counts);
   free(displs);
- // free(x);
    }
- // freearray(local_life);
   freearray(temp);
-  //freearray(ptr);
- // free(y);
  
-  MPI_Finalize();//new
+  MPI_Finalize();
   return 0;
 }
