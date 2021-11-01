@@ -197,6 +197,7 @@ int main(int argc, char **argv) {
   printarray(life, N, 0);
 #endif
 
+  temp = allocarray((mycount/(N+2))+2,N+2);
   t1 = MPI_Wtime(); 
   /* Play the game of life for given number of iterations */
   for (k = 0; k < NTIMES; k++) {
@@ -218,7 +219,7 @@ int main(int argc, char **argv) {
 		      MPI_COMM_WORLD, &status );			  
 
     myflag = 0;
-	temp = allocarray((mycount/(N+2))+2,N+2);
+	//temp = allocarray((mycount/(N+2))+2,N+2);
 	new_mycount = (mycount/(N+2));			
 	myflag = compute(local_life, temp, new_mycount, N);
 
@@ -262,7 +263,7 @@ int main(int argc, char **argv) {
   freearray(life);
   free(counts);
   free(displs);
-  free(x);
+ // free(x);
    }
  // freearray(local_life);
   freearray(temp);
