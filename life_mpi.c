@@ -121,24 +121,45 @@ int main(int argc, char **argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);//new
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);//new
   
-    if (argc != 4) {
+  //  if (argc != 4) {
+  //  printf("Usage: %s <size> <max. iterations> <nthreads> <output dir>\n", argv[0]);
+  //  exit(-1);
+ //}  
+
+//  N = atoi(argv[1]);//new
+
+
+//  NTIMES = atoi(argv[2]);
+ // sprintf(filename,"%s/output.%d.%d.%d", argv[3], N, NTIMES, size);
+  
+  
+  
+    if (argc != 5) {
     printf("Usage: %s <size> <max. iterations> <nthreads> <output dir>\n", argv[0]);
     exit(-1);
-  }  
+  }
 
-  N = atoi(argv[1]);//new
-  myN = (N) / size;
-  remain = (N) % size;
-
+  N = atoi(argv[1]);
   NTIMES = atoi(argv[2]);
-  sprintf(filename,"%s/output.%d.%d.%d", argv[3], N, NTIMES, size);
+  NTHREADS = atoi(argv[3]);
+  sprintf(filename,"%s/output.%d.%d.%d", argv[4], N, NTIMES, NTHREADS);
+
+    myN = (N) / size;
+  remain = (N) % size;
   
   	if (rank == 0) {
+  
   if ((fptr = fopen(filename, "w")) == NULL) {
-     printf("Error opening file %s for writing\n", argv[2]);
+     printf("Error opening file %s for writing\n", argv[3]);
      perror("fopen");
      exit(-1);
   }
+  
+ // if ((fptr = fopen(filename, "w")) == NULL) {
+   //  printf("Error opening file %s for writing\n", argv[2]);
+    // perror("fopen");
+    // exit(-1);
+ // }
 
 	  /* Allocate memory for both arrays */
 	  life = allocarray(N,N+2);	  
