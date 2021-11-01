@@ -105,7 +105,7 @@ int compute(int **life, int **temp, int new_mycount, int N) {
 
 
 int main(int argc, char **argv) {
-  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr ; //NTHREADS,
+  int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr, NTHREADS;
   int i, j, k, flag=1, myflag=1;
   int myN, rank, size, remain,  mycount, *counts=NULL, *displs=NULL, new_mycount; //new  
   //int rank, size;
