@@ -12,10 +12,21 @@
            ./life 5000 5000 1 /scratch/$USER/     (on DMC at ASC)
 */
 
+/* 
+   The code is parallelized using MPI (blocking version).
+   Modified by: Ebrahim Hamidi
+   Date: Nov. 04, 2021
+   Email: shamidi1@crimson.ua.edu
+   Course Section: CS 581
+   Homework #: 4 (Parallel Programming with MPI)
+   gcc compiler:   mpicc -g -Wall -O -o life_mpi life_mpi.c
+   to run: srun --mpi=pmi2 -n 8 ./life_mpi 5000 5000 /scratch/$USER/
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <mpi.h> //new
+#include <mpi.h>
 
 #define DIES   0
 #define ALIVE  1
@@ -108,35 +119,37 @@ int main(int argc, char **argv) {
   int N, NTIMES,  **life=NULL, **local_life=NULL, **temp=NULL, **ptr;
   int i, j, k, flag=1, myflag=1;
   int myN, rank, size, remain,  mycount, *counts=NULL, *displs=NULL, new_mycount; //new  
-
-  int *x=NULL, *y; //new
+  int *x=NULL, *y;
   double t1, t2;
   char filename[BUFSIZ];
   FILE *fptr;
   
   MPI_Status status;
-  MPI_Init(&argc, &argv);//new
-  MPI_Comm_size(MPI_COMM_WORLD, &size);//new
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);//new
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-    if (argc != 4) {
+  if (argc != 4) {
     printf("Usage: %s <size> <max. iterations> <nthreads> <output dir>\n", argv[0]);
     exit(-1);
   }  
 
-  N = atoi(argv[1]);//new
+  N = atoi(argv[1]);
+  
+  /* Data Distribution based on the number of the processes and the size of life matrix */
   myN = (N) / size;
   remain = (N) % size;
 
   NTIMES = atoi(argv[2]);
   sprintf(filename,"%s/output.%d.%d.%d", argv[3], N, NTIMES, size);
   
-  	if (rank == 0) {
-  if ((fptr = fopen(filename, "w")) == NULL) {
-     printf("Error opening file %s for writing\n", argv[2]);
-     perror("fopen");
-     exit(-1);
-  }
+  /* Defining the life matrix and displs and counts variables for scattering the data */
+  if (rank == 0) {
+	if ((fptr = fopen(filename, "w")) == NULL) {
+		printf("Error opening file %s for writing\n", argv[2]);
+		perror("fopen");
+		exit(-1);
+	}
 
 	  /* Allocate memory for both arrays */
 	  life = allocarray(N,N+2);	  
@@ -174,6 +187,8 @@ int main(int argc, char **argv) {
 	    for (i = 0; i < size; i++)
 			counts[i] = counts[i] *(N+2);			
 	}
+	
+	/* Specifies the number of data in each processes */
 	mycount = (myN + ((rank < remain)?1:0)) *(N+2);
     
 #ifdef DEBUG
@@ -184,9 +199,12 @@ int main(int argc, char **argv) {
 	  printf("rank = %d, mycount = %d\n", rank, mycount);
 	}
 #endif
+
+    /* defining “Local_life” matrix in each process */
     local_life = allocarray((mycount/(N+2))+2,N+2);
 	y = &local_life[1][0];
-
+    
+	/* Scattering the data into each process's “Local_life” matrix uning rank 0 */
 	MPI_Scatterv(x, counts, displs, MPI_INT, y, mycount, MPI_INT, 0, MPI_COMM_WORLD);
 	
 
@@ -196,18 +214,21 @@ int main(int argc, char **argv) {
 #endif
 
   temp = allocarray((mycount/(N+2))+2,N+2);
+  int up_nbr, down_nbr;
   t1 = MPI_Wtime(); 
+  
   /* Play the game of life for given number of iterations */
   for (k = 0; k < NTIMES; k++) {
 
-	y = &local_life[0][0]; 
-    int up_nbr, down_nbr;
-
+	y = &local_life[0][0];
+	
+	/* Variables used for processes communications */
     up_nbr = rank + 1;
     if (up_nbr >= size) up_nbr = MPI_PROC_NULL;
     down_nbr = rank - 1;
     if (down_nbr < 0) down_nbr = MPI_PROC_NULL;
-
+	
+	/* Blocking processes communications */
 	MPI_Sendrecv(&y[(N+2)], (N+2), MPI_INT, down_nbr, 0, 
 		      &y[0], (N+2), MPI_INT, down_nbr, 0, 
 		      MPI_COMM_WORLD, &status );
@@ -216,10 +237,12 @@ int main(int argc, char **argv) {
 		      &y[((mycount/(N+2))+1)*(N+2)], (N+2), MPI_INT, up_nbr, 0, 
 		      MPI_COMM_WORLD, &status );			  
 
+	/* Calling comute function by each process */
     myflag = 0;
 	new_mycount = (mycount/(N+2));			
 	myflag = compute(local_life, temp, new_mycount, N);
 
+	/* Ckecking the changes in the previous generation using flag */
     MPI_Allreduce(&myflag, &flag, 1, MPI_INT, MPI_SUM,
          MPI_COMM_WORLD);
    
@@ -241,6 +264,7 @@ int main(int argc, char **argv) {
   }
   t2 = MPI_Wtime(); 
   
+  /* Gathering all data into the life matrix for printing */
   MPI_Gatherv(&y[N+2], mycount, MPI_INT, x, counts, displs, MPI_INT, 0, MPI_COMM_WORLD);	
 		
 #ifdef DEBUG1
